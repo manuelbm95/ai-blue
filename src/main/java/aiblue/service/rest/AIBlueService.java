@@ -84,7 +84,7 @@ public class AIBlueService {
 		builder.queryParam(UUID_PARAM, this.uuid);
 		webClient = WebClient.create(BASE_URL + builder.build().toUriString());
 		return webClient.get().header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-				.header("Authorization", "Bearer " + "5577f8ca-1554-40a2-8ed9-83951a022dc3").retrieve()
-				.bodyToFlux(Boolean.class).blockFirst();
+				.header("Authorization", "Bearer " + this.token.getAccessToken()).retrieve().bodyToFlux(Boolean.class)
+				.blockFirst();
 	}
 }
