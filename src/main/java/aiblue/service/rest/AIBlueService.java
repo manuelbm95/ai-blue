@@ -1,7 +1,9 @@
 package aiblue.service.rest;
 
+import java.util.List;
 import java.util.Optional;
 
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.util.LinkedMultiValueMap;
@@ -12,6 +14,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import aiblue.model.BodyBearer;
 import aiblue.model.EnumChest;
+import aiblue.model.Pieza;
 import aiblue.model.TokenBearer;
 import reactor.core.publisher.Mono;
 
@@ -22,6 +25,8 @@ public class AIBlueService {
 	private static final String URI_ENDGAME = "api/v1/game/game-ended";
 	private static final String URI_TURN = "api/v1/game/player-turn";
 	private static final String URI_JOIN = "api/v1/game/join";
+	private static final String URI_MOVE = "api/v1/game/move";
+	private static final String URI_GETBOARD = "api/v1/game/pieces";
 	private static final String UUID_PARAM = "uuid";
 
 	private TokenBearer token;
@@ -85,6 +90,27 @@ public class AIBlueService {
 		webClient = WebClient.create(BASE_URL + builder.build().toUriString());
 		return webClient.get().header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
 				.header("Authorization", "Bearer " + this.token.getAccessToken()).retrieve().bodyToFlux(Boolean.class)
+				.blockFirst();
+	}
+
+	public List<Pieza> getBoard() {
+		UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(URI_GETBOARD);
+		builder.queryParam(UUID_PARAM, this.uuid);
+		webClient = WebClient.create(BASE_URL + builder.build().toUriString());
+		return webClient.get().header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+				.header("Authorization", "Bearer " + this.token.getAccessToken()).retrieve()
+				.bodyToFlux(new ParameterizedTypeReference<List<Pieza>>() {
+				}).blockFirst();
+	}
+
+	public void move(String from, String to) {
+		UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(URI_MOVE);
+		builder.queryParam(UUID_PARAM, this.uuid);
+		builder.queryParam("from", from);
+		builder.queryParam("to", to);
+		webClient = WebClient.create(BASE_URL + builder.build().toUriString());
+		webClient.post().header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_FORM_URLENCODED_VALUE)
+				.header("Authorization", "Bearer " + this.token.getAccessToken()).retrieve().bodyToFlux(Void.class)
 				.blockFirst();
 	}
 }
