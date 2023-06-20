@@ -17,6 +17,7 @@ public class AIBlueApplication {
 				// Logica IA
 				// consultar tablero
 				// Calcular movimientos en arbol
+				//aIBlueService.getAvailableMoves();
 				// seleccionar 1 (implementar un timer de 1 minuto)
 				// enviar nuestro movimiento
 			}
