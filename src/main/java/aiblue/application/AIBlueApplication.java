@@ -12,7 +12,7 @@ public class AIBlueApplication {
 
 	public static void main(String[] args) {
 
-		String uuid = "963b7811-efad-4323-9ea4-0b93fca7f43e";
+		String uuid = "cac3cc18-001f-4993-bd25-01624eec70ae";
 		AIBlueService aIBlueService = new AIBlueService("manu", "manu", "password", uuid, "WHITE");
 		aIBlueService.joinGame();
 		// List<Pieza> lista = aIBlueService.getBoard();
@@ -40,17 +40,8 @@ public class AIBlueApplication {
 						list.add(new CasePositionCustom(key, String.valueOf(finalValue.get("col")).toUpperCase()
 								+ String.valueOf(finalValue.get("row"))));
 					}
-//					for (CasePosition value : valueList) {
-//						list.add(new CasePositionCustom(key,
-//								String.valueOf(value.getCol()).toUpperCase() + String.valueOf(value.getRow())));
-//					}
+
 				}
-//				moves.keySet().forEach(key -> {
-//					for (CasePosition value : moves.get("G1")) {
-//						list.add(new CasePositionCustom(key,
-//								String.valueOf(value.getCol()).toUpperCase() + String.valueOf(value.getRow())));
-//					}
-//				});
 				int random = (int) (Math.random() * moves.keySet().size() - 1) + 1;
 				CasePositionCustom moveRandom;
 				try {
