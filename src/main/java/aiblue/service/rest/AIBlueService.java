@@ -1,5 +1,6 @@
 package aiblue.service.rest;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -7,18 +8,21 @@ import java.util.Optional;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import aiblue.model.BodyBearer;
+import aiblue.model.CasePositionCustom2;
 import aiblue.model.EnumChest;
 import aiblue.model.Pieza;
 import aiblue.model.TokenBearer;
-import aiblue.enums.CasePosition;
 import reactor.core.publisher.Mono;
 
 public class AIBlueService {
@@ -118,16 +122,27 @@ public class AIBlueService {
 				.blockFirst();
 	}
 
-
-	public ResponseEntity<Map<CasePosition, List<CasePosition>>> getAvailableMoves(String from, String side) {
+	@SuppressWarnings("unchecked")
+	public Map<String, List<Map<String, CasePositionCustom2>>> getAvailableMoves(String from, String side) {
 		UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(URI_GET_AVAILABLE_MOVES);
 		builder.queryParam("from", from);
 		builder.queryParam(UUID_PARAM, this.uuid);
 		builder.queryParam("side", side);
 		webClient = WebClient.create(BASE_URL + builder.build().toUriString());
-		return (ResponseEntity<Map<CasePosition, List<CasePosition>>>) webClient.get().header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-				.header("Authorization", "Bearer " + this.token.getAccessToken()).retrieve()
-				.bodyToFlux(new ParameterizedTypeReference<Map<CasePosition, List<CasePosition>>>() {
-				}).blockFirst();
+		String reponse = webClient.get().header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+				.header("Authorization", "Bearer " + this.token.getAccessToken()).retrieve().bodyToFlux(String.class)
+				.blockFirst();
+		Map<String, List<Map<String, CasePositionCustom2>>> map = null;
+		try {
+			map = new ObjectMapper().readValue(reponse, HashMap.class);
+
+		} catch (JsonMappingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (JsonProcessingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return map;
 	}
 }
