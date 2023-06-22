@@ -16,6 +16,6 @@ public class Pieza implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	private String rawPosition;
-	private boolean side;
+	private byte side;
 	private String name;
 }

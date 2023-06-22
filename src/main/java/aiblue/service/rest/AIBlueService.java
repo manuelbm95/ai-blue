@@ -1,11 +1,11 @@
 package aiblue.service.rest;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.util.LinkedMultiValueMap;
@@ -21,18 +21,18 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import aiblue.model.BodyBearer;
 import aiblue.model.CasePositionCustom2;
 import aiblue.model.EnumChest;
-import aiblue.model.Pieza;
 import aiblue.model.TokenBearer;
 import reactor.core.publisher.Mono;
 
 public class AIBlueService {
 
-	private static final String BASE_URL = "http://localhost:8080/";
+	private static final String BASE_URL = "http://frparvm97723807.corp.capgemini.com:8280/";
 	private static final String URI_BEARER = "oauth/token";
 	private static final String URI_ENDGAME = "api/v1/game/game-ended";
 	private static final String URI_TURN = "api/v1/game/player-turn";
 	private static final String URI_JOIN = "api/v1/game/join";
 	private static final String URI_MOVE = "api/v1/game/move";
+	private static final String URI_MOVE_PROMOTION = "api/v1/game/piece/pawn/promotion";
 	private static final String URI_GETBOARD = "api/v1/game/pieces";
 	private static final String URI_GET_AVAILABLE_MOVES = "api/v1/game/available-moves";
 	private static final String UUID_PARAM = "uuid";
@@ -101,14 +101,26 @@ public class AIBlueService {
 				.blockFirst();
 	}
 
-	public List<Pieza> getBoard() {
+	@SuppressWarnings("unchecked")
+	public List<Map<String, String>> getBoard() {
 		UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(URI_GETBOARD);
 		builder.queryParam(UUID_PARAM, this.uuid);
 		webClient = WebClient.create(BASE_URL + builder.build().toUriString());
-		return webClient.get().header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-				.header("Authorization", "Bearer " + this.token.getAccessToken()).retrieve()
-				.bodyToFlux(new ParameterizedTypeReference<List<Pieza>>() {
-				}).blockFirst();
+		String reponse = webClient.get().header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+				.header("Authorization", "Bearer " + this.token.getAccessToken()).retrieve().bodyToFlux(String.class)
+				.blockFirst();
+		List<Map<String, String>> piezas = null;
+		try {
+			piezas = new ObjectMapper().readValue(reponse, ArrayList.class);
+
+		} catch (JsonMappingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (JsonProcessingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return piezas;
 	}
 
 	public void move(String from, String to) {
@@ -119,6 +131,17 @@ public class AIBlueService {
 		webClient = WebClient.create(BASE_URL + builder.build().toUriString());
 		webClient.post().header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_FORM_URLENCODED_VALUE)
 				.header("Authorization", "Bearer " + this.token.getAccessToken()).retrieve().bodyToFlux(Void.class)
+				.blockFirst();
+	}
+
+	public boolean movePromotion(String to, String piece) {
+		UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(URI_MOVE_PROMOTION);
+		builder.queryParam("to", to);
+		builder.queryParam(UUID_PARAM, this.uuid);
+		builder.queryParam("piece", piece);
+		webClient = WebClient.create(BASE_URL + builder.build().toUriString());
+		return webClient.post().header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_FORM_URLENCODED_VALUE)
+				.header("Authorization", "Bearer " + this.token.getAccessToken()).retrieve().bodyToFlux(Boolean.class)
 				.blockFirst();
 	}
 
