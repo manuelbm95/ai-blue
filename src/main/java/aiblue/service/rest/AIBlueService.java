@@ -35,6 +35,7 @@ public class AIBlueService {
 	private static final String URI_MOVE_PROMOTION = "api/v1/game/piece/pawn/promotion";
 	private static final String URI_GETBOARD = "api/v1/game/pieces";
 	private static final String URI_GET_AVAILABLE_MOVES = "api/v1/game/available-moves";
+
 	private static final String UUID_PARAM = "uuid";
 
 	private TokenBearer token;
@@ -168,4 +169,5 @@ public class AIBlueService {
 		}
 		return map;
 	}
+
 }

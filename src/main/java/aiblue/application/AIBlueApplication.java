@@ -15,30 +15,28 @@ public class AIBlueApplication {
 
 	public static void main(String[] args) {
 		/*
-		 * aiblueWhite aiblueBlack aiblueObserver
+		 * Users: aiblueWhite aiblueBlack aiblueObserver
 		 */
-		String uuid = "d2798ce0-6dcc-40f6-97e8-6dcbbbd01d55";
+		String uuid = "008aa610-2427-4db8-a75f-97c67afe8d6d";
 		String color = "WHITE";
+		String user = "aiblueWhite";
+
 		String filaPromotion = color.equals("WHITE") ? "8" : "1";
 		String pawn = color.equals("WHITE") ? "White Pawn" : "Black Pawn";
 		boolean promotion = false;
-		AIBlueService aIBlueService = new AIBlueService("aiblueWhite", "DBC", "password", uuid, color);
+		AIBlueService aIBlueService = new AIBlueService(user, "DBC", "password", uuid, color);
 		aIBlueService.joinGame();
 		Optional<Pieza> p = Optional.empty();
+
 		// verificar si el juego sigue o ha terminado para finalizar ejecución
 		while (aIBlueService.isGameEndedStatus()) {
 			// si es nuestro turno
 			while (aIBlueService.isMyTurn()) {
-				// Logica IA
-				// consultar tablero
-				// Calcular movimientos en arbol
-				// aIBlueService.getAvailableMoves();
-				// seleccionar 1 (implementar un timer de 1 minuto)
-				// enviar nuestro movimiento
 				Map<String, List<Map<String, CasePositionCustom2>>> moves = aIBlueService.getAvailableMoves(null,
 						color);
 
 				List<Pieza> piezasList = new ArrayList<>();
+				List<Pieza> piezasListAdversario = new ArrayList<>();
 
 				List<CasePositionCustom> list = new ArrayList<>();
 				List<String> keys = new ArrayList<>(moves.keySet());
@@ -53,7 +51,39 @@ public class AIBlueApplication {
 					}
 
 				}
-				int random = (int) Math.random() * list.size();
+				List<Map<String, String>> board = aIBlueService.getBoard();
+				board.forEach(value -> {
+					Pieza pi = new Pieza();
+					for (String key : value.keySet()) {
+						if (key.equals("rawPosition")) {
+							pi.setRawPosition(value.get(key));
+						} else if (key.equals("name")) {
+							pi.setName(value.get(key));
+						}
+					}
+					if (color.equals("WHITE") && pi.getName() != null && !pi.getName().isEmpty()
+							&& pi.getName().contains("Black")) {
+						piezasListAdversario.add(pi);
+					} else if (color.equals("BLACK") && pi.getName() != null && !pi.getName().isEmpty()
+							&& pi.getName().contains("White")) {
+						piezasListAdversario.add(pi);
+					}
+					piezasList.add(pi);
+				});
+				int random = (int) (Math.random() * list.size() - 1) + 1;
+				List<CasePositionCustom> movimientoTop = new ArrayList<>();
+				for (Pieza adversario : piezasListAdversario) {
+
+					for (CasePositionCustom value : list) {
+
+						if (value.getTo().equals(adversario.getRawPosition())) {
+							movimientoTop.add(value);
+						}
+					}
+				}
+
+				boolean deadPossible = !movimientoTop.isEmpty();
+
 				CasePositionCustom moveRandom;
 
 				try {
@@ -61,10 +91,31 @@ public class AIBlueApplication {
 				} catch (Exception ex) {
 					moveRandom = list.get(list.size() - 1);
 				}
+				CasePositionCustom moveTop = null;
 
-				aIBlueService.move(moveRandom.getFrom(), moveRandom.getTo());
+//				try {
+//					Thread.sleep(2000);
+//				} catch (InterruptedException e) {
+//					e.printStackTrace();
+//				}
+
+				int randomDead = (int) (Math.random() * movimientoTop.size() - 1) + 1;
+				try {
+					if (deadPossible) {
+						try {
+							moveTop = movimientoTop.get(randomDead);
+						} catch (Exception ex) {
+							moveTop = movimientoTop.get(movimientoTop.size() - 1);
+						}
+						aIBlueService.move(moveTop.getFrom(), moveTop.getTo());
+					} else {
+						aIBlueService.move(moveRandom.getFrom(), moveRandom.getTo());
+					}
+				} catch (Exception e) {
+					aIBlueService.move(moveRandom.getFrom(), moveRandom.getTo());
+				}
 				// pawn promotion
-				List<Map<String, String>> board = aIBlueService.getBoard();
+				board = aIBlueService.getBoard();
 				board.forEach(value -> {
 					Pieza pi = new Pieza();
 					for (String key : value.keySet()) {
@@ -77,20 +128,28 @@ public class AIBlueApplication {
 					piezasList.add(pi);
 				});
 				try {
-					p = piezasList.stream().filter(v -> v.getRawPosition().equals(list.get(random).getFrom()))
-							.findFirst();
+					final CasePositionCustom finalMove = deadPossible ? movimientoTop.get(randomDead) : moveRandom;
+					p = piezasList.stream().filter(v -> v.getRawPosition().equals(finalMove.getFrom())).findFirst();
 				} catch (Exception ex) {
 					p = piezasList.stream().filter(v -> v.getRawPosition().equals(list.get(list.size() - 1).getFrom()))
 							.findFirst();
 				}
 				promotion = p.isPresent() ? p.get().getName().equals(pawn) : false;
-				if (promotion && moveRandom.getTo().contains(filaPromotion)) {
+				if (promotion && deadPossible ? moveTop.getTo().contains(filaPromotion)
+						: moveRandom.getTo().contains(filaPromotion)) {
 					int piece = (int) (Math.random() * 3 - 1) + 1;
-					if (!aIBlueService.movePromotion(moveRandom.getTo(),
-							PawnPromotionPiecesModel.values()[piece].name())) {
+					if (!aIBlueService.movePromotion(moveRandom.getTo(), PawnPromotionPiecesModel.QUEEN.name())) {
+					} else if (moveTop != null) {
+						aIBlueService.movePromotion(moveTop.getTo(), PawnPromotionPiecesModel.QUEEN.name());
 					}
 				}
 			}
+//			try {
+//				Thread.sleep(500);
+//			} catch (InterruptedException e) {
+//				e.printStackTrace();
+//			}
 		}
+		System.out.println("Se acabo el juego !");
 	}
 }
